@@ -657,6 +657,7 @@ public class BoundedConcurrentHashMap<K, V> extends AbstractMap<K, V>
          try {
             for (HashEntry<K, V> e : accessQueue) {
                if (present(e)) {
+                  evicted.remove(e);
                   if (e.recency() == Recency.LIR_RESIDENT) {
                      handleLIRHit(e, evicted);
                   } else if (e.recency() == Recency.HIR_RESIDENT) {
@@ -708,18 +709,20 @@ public class BoundedConcurrentHashMap<K, V> extends AbstractMap<K, V>
       public Set<HashEntry<K, V>> onEntryMiss(HashEntry<K, V> e) {
          // initialization
          Set<HashEntry<K, V>> evicted = Collections.emptySet();
-         if (currentLIRSize + 1 < lirSizeLimit) {
+         if (currentLIRSize < lirSizeLimit) {
             currentLIRSize++;
             e.transitionToLIRResident();
             stack.put(e.key, e);
          } else {
             if (queue.size() < hirSizeLimit) {
                queue.addLast(e);
+               stack.put(e.key, e);
             } else {
                boolean inStack = stack.containsKey(e.key);
                HashEntry<K, V> first = queue.removeFirst();
                first.transitionHIRResidentToHIRNonResident();
 
+               stack.remove(e.key);
                stack.put(e.key, e);
 
                evicted = new HashSet<HashEntry<K, V>>();
@@ -728,9 +731,9 @@ public class BoundedConcurrentHashMap<K, V> extends AbstractMap<K, V>
                   switchBottomostLIRtoHIRAndPrune(evicted);
                } else {
                   queue.addLast(e);
-                  evicted.add(first);
                }
                // evict from segment
+               evicted.add(first);
                removeFromSegment(evicted);
             }
          }
@@ -783,7 +786,10 @@ public class BoundedConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
       @Override
       public void onEntryRemove(HashEntry<K, V> e) {
-         HashEntry<K, V> removed = stack.remove(e.key);
+         HashEntry<K, V> removed = null;
+         if (e.recency() != Recency.HIR_NONRESIDENT){
+            removed = stack.remove(e.key);
+         }
          if (removed != null && removed.recency() == Recency.LIR_RESIDENT) {
             currentLIRSize--;
          }
