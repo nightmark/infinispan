@@ -969,12 +969,13 @@ public class BoundedConcurrentHashMap<K, V> extends AbstractMap<K, V>
                e = e.next;
             }
             // a hit
+            /*
             if (result != null) {
                if (eviction.onEntryHit(e)) {
                   Set<HashEntry<K, V>> evicted = attemptEviction(false);
                   notifyEvictionListener(evicted);
                }
-            }
+            }*/
             return result;
          }
          return null;
@@ -1212,10 +1213,10 @@ public class BoundedConcurrentHashMap<K, V> extends AbstractMap<K, V>
                   for (HashEntry<K, V> p = first; p != e; p = p.next) {
                      // TODO A remove operation makes the map behave like all the other keys in the bucket were just added???
                      // allow p to be GC-ed
-                     eviction.onEntryRemove(p);
+                     //eviction.onEntryRemove(p);
                      newFirst = new HashEntry<K, V>(p.key, p.hash, newFirst, p.value);
                      // and notify eviction algorithm about new hash entries
-                     eviction.onEntryMiss(newFirst);
+                     //eviction.onEntryMiss(newFirst);
                   }
 
                   tab[index] = newFirst;
