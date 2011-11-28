@@ -648,10 +648,10 @@ public class BoundedConcurrentHashMap<K, V> extends AbstractMap<K, V>
          this.state = Recency.HIR_RESIDENT;
          
          // initially point everything back to self
-         this.previousInStack = this;
-         this.nextInStack = this;
-         this.previousInQueue = this;
-         this.nextInQueue = this;
+         this.previousInStack = null;
+         this.nextInStack = null;
+         this.previousInQueue = null;
+         this.nextInQueue = null;
       }
 
       @Override
